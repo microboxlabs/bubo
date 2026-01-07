@@ -1,6 +1,8 @@
 ---
 name: gh-issue-writer
-description: Create and publish GitHub issues with full project board integration. Use when the user wants to create feature requests (feat:) or bug reports (bug:), track work in GitHub Projects, and set up development branches.
+description: Create and publish GitHub issues with full project board integration. Use when 
+the user wants to create feature requests (feat:) or bug reports (bug:), track work in 
+GitHub Projects, and set up development branches.
 ---
 
 # GitHub Issue Writer
@@ -32,26 +34,28 @@ Publish the issue directly to the repository specified in `$GH_ISSUE_REPO` using
 - **Labels**: Appropriate labels (e.g., `enhancement`, `bug`, `bubo`, `cli`, `github-integration`)
 - **Body**: Fill in all template sections with relevant details
 
-### Step 3: Associate Issue to Project
+### Step 3: Associate Issue to Project and Capture Item ID
 
-Read project configuration from `.env` file, then add the issue to the project:
+Read project configuration from `.env` file, add the issue to the project, and capture the project item ID in one step:
 
 ```bash
-# Load env vars (or read from .env)
 source .env
 
-gh project item-add $GH_PROJECT_NUMBER --owner $GH_PROJECT_OWNER --url https://github.com/$GH_ISSUE_REPO/issues/<ISSUE_NUMBER>
+# Add to project and capture item ID (more efficient than querying all items)
+ITEM_ID=$(gh project item-add $GH_PROJECT_NUMBER \
+  --owner $GH_PROJECT_OWNER \
+  --url "https://github.com/$GH_ISSUE_REPO/issues/<ISSUE_NUMBER>" \
+  --format json | jq -r '.id')
+
+echo "Project Item ID: $ITEM_ID"
 ```
 
 ### Step 4: Set Project Status
 
-Get the item ID and set the status using env vars:
+Set the status using the captured item ID:
 
 ```bash
 source .env
-
-# Get item ID
-ITEM_ID=$(gh project item-list $GH_PROJECT_NUMBER --owner $GH_PROJECT_OWNER --limit 500 --format json | jq -r '.items[] | select(.content.number == <ISSUE_NUMBER>) | .id')
 
 # Set status based on context:
 # If files are already modified → "In Progress"

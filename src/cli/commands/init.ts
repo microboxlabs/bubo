@@ -1,5 +1,6 @@
 import { writeFile, mkdir } from 'fs/promises';
 import { existsSync } from 'fs';
+import { execSync } from 'child_process';
 import { join, dirname } from 'path';
 import { stringify as yamlStringify } from 'yaml';
 import { generateStarterConfig } from '../../core/config/defaults.js';
@@ -12,6 +13,25 @@ interface InitOptions {
   repo?: string;
   project?: number;
   force?: boolean;
+}
+
+type ConfigSource = 'command line' | 'environment' | 'git remote';
+
+/**
+ * Detect GitHub owner and repo from git remote origin URL
+ */
+function detectGitHubRemote(): { owner: string; repo: string } | null {
+  try {
+    const remote = execSync('git remote get-url origin', { encoding: 'utf-8' }).trim();
+    // Parse: git@github.com:owner/repo.git or https://github.com/owner/repo.git
+    const match = remote.match(/github\.com[:/]([^/]+)\/([^/.]+)/);
+    if (match && match[1] && match[2]) {
+      return { owner: match[1], repo: match[2] };
+    }
+  } catch {
+    // Not a git repo or no remote configured
+  }
+  return null;
 }
 
 /**
@@ -28,14 +48,58 @@ export async function initCommand(options: InitOptions): Promise<void> {
     return;
   }
 
-  // Determine owner and repo
-  const owner = options.owner ?? process.env['GITHUB_OWNER'] ?? '';
-  const repo = options.repo ?? process.env['GITHUB_REPO'] ?? '';
+  // Try to detect from git remote
+  const detectedRemote = detectGitHubRemote();
+
+  // Determine owner and repo with source tracking
+  let owner: string;
+  let repo: string;
+  let ownerSource: ConfigSource;
+  let repoSource: ConfigSource;
+
+  if (options.owner) {
+    owner = options.owner;
+    ownerSource = 'command line';
+  } else if (process.env['GITHUB_OWNER']) {
+    owner = process.env['GITHUB_OWNER'];
+    ownerSource = 'environment';
+  } else if (detectedRemote) {
+    owner = detectedRemote.owner;
+    ownerSource = 'git remote';
+  } else {
+    owner = '';
+    ownerSource = 'command line';
+  }
+
+  if (options.repo) {
+    repo = options.repo;
+    repoSource = 'command line';
+  } else if (process.env['GITHUB_REPO']) {
+    repo = process.env['GITHUB_REPO'];
+    repoSource = 'environment';
+  } else if (detectedRemote) {
+    repo = detectedRemote.repo;
+    repoSource = 'git remote';
+  } else {
+    repo = '';
+    repoSource = 'command line';
+  }
 
   if (!owner || !repo) {
-    console.log('⚠️  GitHub owner and repo are required');
-    console.log('   Set GITHUB_OWNER and GITHUB_REPO environment variables');
-    console.log('   Or use: bubo init --owner <owner> --repo <repo>');
+    console.log('⚠️  GitHub owner and repo are required.\n');
+    console.log('Options:');
+    console.log('  1. Set environment variables:');
+    console.log('     export GITHUB_OWNER=your-org');
+    console.log('     export GITHUB_REPO=your-repo\n');
+    console.log('  2. Pass as arguments:');
+    console.log('     bubo init --owner your-org --repo your-repo\n');
+    if (detectedRemote) {
+      console.log(`  3. Detected from git remote: ${detectedRemote.owner}/${detectedRemote.repo}`);
+      console.log('     This will be used automatically if no other values are provided.\n');
+    } else {
+      console.log('  Note: No git remote detected. Make sure you are in a git repository');
+      console.log('        with a GitHub remote configured.\n');
+    }
     return;
   }
 
@@ -59,7 +123,13 @@ export async function initCommand(options: InitOptions): Promise<void> {
   const yamlContent = generateYamlWithComments(config);
   await writeFile(configPath, yamlContent, 'utf-8');
 
+  // Show success with source information
+  const sourceInfo = ownerSource === repoSource
+    ? `(from ${ownerSource})`
+    : `(owner from ${ownerSource}, repo from ${repoSource})`;
+
   console.log('✅ Created .bubo/workflow.yml');
+  console.log(`   Repository: ${owner}/${repo} ${sourceInfo}`);
   console.log('');
   console.log('Next steps:');
   console.log('  1. Review and customize the configuration');

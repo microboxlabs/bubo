@@ -1,4 +1,4 @@
-# Bubo - Enterprise AI Coding Agent
+# Bubo - Production-Ready AI Coding Agent
 # Multi-stage build for optimal image size
 
 # Stage 1: Build

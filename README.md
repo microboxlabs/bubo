@@ -1,6 +1,6 @@
 # Bubo
 
-An enterprise AI coding agent with deep GitHub integration. Bubo automates software development workflows by orchestrating AI-powered coding sessions that integrate seamlessly with GitHub Issues, Projects, and Pull Requests.
+A production-ready AI coding agent with deep GitHub integration. Bubo automates software development workflows by orchestrating AI-powered coding sessions that integrate seamlessly with GitHub Issues, Projects, and Pull Requests.
 
 ## Overview
 

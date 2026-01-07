@@ -22,7 +22,10 @@ type ConfigSource = 'command line' | 'environment' | 'git remote';
  */
 function detectGitHubRemote(): { owner: string; repo: string } | null {
   try {
-    const remote = execSync('git remote get-url origin', { encoding: 'utf-8' }).trim();
+    const remote = execSync('git remote get-url origin', {
+      encoding: 'utf-8',
+      stdio: ['ignore', 'pipe', 'ignore'], // Suppress stderr to avoid error messages
+    }).trim();
     // Parse: git@github.com:owner/repo.git or https://github.com/owner/repo.git
     const match = remote.match(/github\.com[:/]([^/]+)\/([^/.]+)/);
     if (match && match[1] && match[2]) {
@@ -48,8 +51,8 @@ export async function initCommand(options: InitOptions): Promise<void> {
     return;
   }
 
-  // Try to detect from git remote
-  const detectedRemote = detectGitHubRemote();
+  // Only try to detect from git remote if owner/repo are not provided
+  const detectedRemote = (options.owner && options.repo) ? null : detectGitHubRemote();
 
   // Determine owner and repo with source tracking
   let owner: string;

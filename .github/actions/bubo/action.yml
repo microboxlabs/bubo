@@ -1,0 +1,42 @@
+name: 'Bubo Agent'
+description: 'Run the Bubo AI coding agent on GitHub Issues and Projects'
+author: 'MicroboxLabs'
+
+branding:
+  icon: 'cpu'
+  color: 'purple'
+
+inputs:
+  github-token:
+    description: 'GitHub token with repo and project permissions'
+    required: true
+  anthropic-api-key:
+    description: 'Anthropic API key for Claude Code'
+    required: true
+  issue-number:
+    description: 'Issue number to work on'
+    required: false
+  project-number:
+    description: 'GitHub Project number to fetch tasks from'
+    required: false
+  max-iterations:
+    description: 'Maximum number of agent iterations'
+    required: false
+    default: '10'
+  dry-run:
+    description: 'Plan without executing changes'
+    required: false
+    default: 'false'
+
+outputs:
+  status:
+    description: 'Final status of the agent run (success, failed, blocked)'
+  commits:
+    description: 'Number of commits made'
+  pr-number:
+    description: 'Pull request number if one was created'
+
+runs:
+  using: 'node20'
+  main: '../../../dist/action/index.js'
+

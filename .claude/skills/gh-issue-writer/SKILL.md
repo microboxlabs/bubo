@@ -1,8 +1,6 @@
 ---
 name: gh-issue-writer
-description: Create and publish GitHub issues with full project board integration. Use when 
-the user wants to create feature requests (feat:) or bug reports (bug:), track work in 
-GitHub Projects, and set up development branches.
+description: Create and publish GitHub issues with full project board integration. Use when the user wants to create feature requests (feat:) or bug reports (bug:), track work in GitHub Projects, and set up development branches.
 ---
 
 # GitHub Issue Writer
@@ -12,6 +10,7 @@ Create and publish GitHub issues for the bubo project with full project board in
 ## When to Use
 
 Use this skill when the user wants to:
+
 - Create a new feature request (input starts with `feat:`)
 - Report a bug (input starts with `bug:`)
 - Track work in the Modular IoT project board
@@ -21,8 +20,8 @@ Use this skill when the user wants to:
 ### Step 1: Parse User Input
 
 1. Determine issue type from prefix:
-   - `feat:` → Feature request
-   - `bug:` → Bug report
+  - `feat:` → Feature request
+  - `bug:` → Bug report
 2. Extract the brief description and additional context
 
 ### Step 2: Create the Issue
@@ -30,6 +29,7 @@ Use this skill when the user wants to:
 Publish the issue directly to the repository specified in `$GH_ISSUE_REPO` using `gh` CLI or GitHub MCP tools.
 
 **Required fields:**
+
 - **Title**: Concise, descriptive title based on user input
 - **Labels**: Appropriate labels (e.g., `enhancement`, `bug`, `bubo`, `cli`, `github-integration`)
 - **Body**: Fill in all template sections with relevant details
@@ -81,6 +81,7 @@ gh issue develop <ISSUE_NUMBER> \
 ```
 
 **Branch naming:**
+
 - Base branch: `trunk`
 - Format: `based/<issue-id>-<short-name>`
 - Short name: 3-4 words max, descriptive of the feature/fix
@@ -138,15 +139,18 @@ When writing issues, understand that bubo is:
 - Can run as CLI, GitHub Action, or webhook service
 
 **Code structure:**
+
 - `cli/` - Command-line interface and commands
 - `core/` - Core business logic and orchestration
 - `types/` - TypeScript type definitions
 - `utils/` - Shared utilities and helpers
 
 **Relevant labels:**
+
 - `bubo` - Triggers Bubo to work on this issue
 - `bubo:in-progress` - Bubo is currently working on this
 - `bubo:blocked` - Bubo encountered an issue and needs help
 - `bubo:complete` - Bubo has completed the task
 - `enhancement` - Feature requests
 - `bug` - Bug reports
+

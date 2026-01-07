@@ -36,3 +36,5 @@ temp/
 # Bubo runtime files
 progress.txt
 
+*.code-workspace
+

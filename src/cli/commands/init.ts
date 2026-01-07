@@ -27,7 +27,7 @@ function detectGitHubRemote(): { owner: string; repo: string } | null {
       stdio: ['ignore', 'pipe', 'ignore'], // Suppress stderr to avoid error messages
     }).trim();
     // Parse: git@github.com:owner/repo.git or https://github.com/owner/repo.git
-    const match = remote.match(/github\.com[:/]([^/]+)\/([^/.]+)/);
+    const match = remote.match(/github\.com[:/]([^/]+)\/(.+?)(?:\.git)?$/);
     if (match && match[1] && match[2]) {
       return { owner: match[1], repo: match[2] };
     }

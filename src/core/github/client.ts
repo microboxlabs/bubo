@@ -1,5 +1,6 @@
 import { Octokit } from '@octokit/rest';
 import type { TaskContext } from '../../types/agent.js';
+import type { GithubConfig } from '../config/schema.js';
 
 /**
  * GitHubClient - Handles all GitHub API interactions
@@ -9,15 +10,15 @@ export class GitHubClient {
   private readonly owner: string;
   private readonly repo: string;
 
-  constructor() {
+  constructor(config: GithubConfig) {
     const token = process.env['GITHUB_TOKEN'];
     if (!token) {
       throw new Error('GITHUB_TOKEN environment variable is required');
     }
 
     this.octokit = new Octokit({ auth: token });
-    this.owner = process.env['GITHUB_OWNER'] ?? '';
-    this.repo = process.env['GITHUB_REPO'] ?? '';
+    this.owner = config.owner;
+    this.repo = config.repo;
   }
 
   /**
@@ -39,6 +40,32 @@ export class GitHubClient {
       labels: issue.labels.map((l) => (typeof l === 'string' ? l : l.name ?? '')),
       url: issue.html_url,
     };
+  }
+
+  /**
+   * List issues with specific labels
+   */
+  async listIssuesWithLabels(labels: string[]): Promise<TaskContext[]> {
+    const { data: issues } = await this.octokit.issues.listForRepo({
+      owner: this.owner,
+      repo: this.repo,
+      labels: labels.join(','),
+      state: 'open',
+      sort: 'created',
+      direction: 'asc',
+    });
+
+    return issues
+      .filter((issue) => !issue.pull_request) // Exclude PRs
+      .map((issue) => ({
+        id: `issue-${issue.number}`,
+        type: 'issue' as const,
+        number: issue.number,
+        title: issue.title,
+        body: issue.body ?? '',
+        labels: issue.labels.map((l) => (typeof l === 'string' ? l : l.name ?? '')),
+        url: issue.html_url,
+      }));
   }
 
   /**
@@ -110,5 +137,40 @@ export class GitHubClient {
 
     return pr.number;
   }
-}
 
+  /**
+   * Check if a label exists in the repository
+   */
+  async labelExists(labelName: string): Promise<boolean> {
+    try {
+      await this.octokit.issues.getLabel({
+        owner: this.owner,
+        repo: this.repo,
+        name: labelName,
+      });
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Create a label if it doesn't exist
+   */
+  async ensureLabel(
+    labelName: string,
+    color: string,
+    description: string
+  ): Promise<void> {
+    const exists = await this.labelExists(labelName);
+    if (!exists) {
+      await this.octokit.issues.createLabel({
+        owner: this.owner,
+        repo: this.repo,
+        name: labelName,
+        color,
+        description,
+      });
+    }
+  }
+}

@@ -1,4 +1,5 @@
-import type { AgentConfig, AgentResult, TaskContext } from '../types/agent.js';
+import type { AgentResult, TaskContext } from '../types/agent.js';
+import type { BuboConfig } from './config/schema.js';
 import { GitHubClient } from './github/client.js';
 import { ClaudeCodeRunner } from './claude/runner.js';
 import { WorkflowEngine } from './workflow/engine.js';
@@ -15,21 +16,30 @@ import { WorkflowEngine } from './workflow/engine.js';
  * 6. Repeat until complete or max iterations reached
  */
 export class BuboAgent {
-  private readonly config: AgentConfig;
+  private readonly config: BuboConfig;
   private readonly github: GitHubClient;
   private readonly claude: ClaudeCodeRunner;
   private readonly workflow: WorkflowEngine;
 
-  constructor(config: Partial<AgentConfig> = {}) {
-    this.config = {
-      maxIterations: config.maxIterations ?? 10,
-      dryRun: config.dryRun ?? false,
-      logLevel: config.logLevel ?? 'info',
-    };
-
-    this.github = new GitHubClient();
+  constructor(config: BuboConfig) {
+    this.config = config;
+    this.github = new GitHubClient(config.github);
     this.claude = new ClaudeCodeRunner();
-    this.workflow = new WorkflowEngine();
+    this.workflow = new WorkflowEngine(config);
+  }
+
+  /**
+   * Get the maximum iterations from config
+   */
+  private get maxIterations(): number {
+    return this.config.agent?.max_iterations ?? 10;
+  }
+
+  /**
+   * Check if dry run mode is enabled
+   */
+  private get dryRun(): boolean {
+    return this.config.agent?.dry_run ?? false;
   }
 
   /**
@@ -39,25 +49,80 @@ export class BuboAgent {
     console.log(`🦉 Starting agent on issue #${issueNumber}`);
     
     const task = await this.github.getIssue(issueNumber);
-    return this.executeLoop(task);
-  }
 
-  /**
-   * Run the agent on the next available task from a GitHub Project
-   */
-  async runOnProject(projectName: string): Promise<AgentResult> {
-    console.log(`🦉 Fetching next task from project: ${projectName}`);
-    
-    const task = await this.workflow.getNextTask(projectName);
-    if (!task) {
+    // Check if task matches trigger conditions
+    if (!this.workflow.matchesTrigger(task)) {
+      console.log('⚠️ Issue does not match trigger conditions');
+      console.log(`   Required labels: ${this.config.workflow.triggers.pickup.labels.join(', ')}`);
+      console.log(`   Issue labels: ${task.labels.join(', ')}`);
       return {
-        status: 'no-work',
-        message: 'No tasks available in the Ready column',
+        status: 'error',
+        message: 'Issue does not have the required labels to be picked up by Bubo',
         iterations: 0,
         commits: 0,
       };
     }
 
+    return this.executeLoop(task);
+  }
+
+  /**
+   * Run the agent on the next available task from the configured project
+   */
+  async runOnNextTask(): Promise<AgentResult> {
+    console.log('🦉 Fetching next task from project...');
+    console.log(this.workflow.getWorkflowSummary());
+    
+    const task = await this.workflow.getNextTask();
+    if (!task) {
+      return {
+        status: 'no-work',
+        message: 'No tasks available that match trigger conditions',
+        iterations: 0,
+        commits: 0,
+      };
+    }
+
+    console.log(`📋 Found task: ${task.title}`);
+    return this.executeLoop(task);
+  }
+
+  /**
+   * Run agent on issues matching the trigger labels (without project board)
+   */
+  async runOnLabeledIssues(): Promise<AgentResult> {
+    const triggerLabels = this.config.workflow.triggers.pickup.labels;
+    console.log(`🦉 Finding issues with labels: ${triggerLabels.join(', ')}`);
+
+    const issues = await this.github.listIssuesWithLabels(triggerLabels);
+    
+    // Filter by exclude labels
+    const excludeLabels = this.config.workflow.triggers.pickup.exclude_labels ?? [];
+    const eligibleIssues = issues.filter((issue) =>
+      !excludeLabels.some((label) => issue.labels.includes(label))
+    );
+
+    if (eligibleIssues.length === 0) {
+      return {
+        status: 'no-work',
+        message: 'No issues found with trigger labels',
+        iterations: 0,
+        commits: 0,
+      };
+    }
+
+    // Take the first (oldest) issue
+    const task = eligibleIssues[0];
+    if (!task) {
+      return {
+        status: 'no-work',
+        message: 'No eligible issues found',
+        iterations: 0,
+        commits: 0,
+      };
+    }
+
+    console.log(`📋 Found issue #${task.number}: ${task.title}`);
     return this.executeLoop(task);
   }
 
@@ -68,9 +133,9 @@ export class BuboAgent {
     let iteration = 0;
     let commits = 0;
 
-    while (iteration < this.config.maxIterations) {
+    while (iteration < this.maxIterations) {
       iteration++;
-      console.log(`\n📍 Iteration ${iteration}/${this.config.maxIterations}`);
+      console.log(`\n📍 Iteration ${iteration}/${this.maxIterations}`);
 
       // Update task status to in-progress
       await this.workflow.updateTaskStatus(task, 'in-progress');
@@ -79,7 +144,7 @@ export class BuboAgent {
       const result = await this.claude.execute({
         task,
         iteration,
-        dryRun: this.config.dryRun,
+        dryRun: this.dryRun,
       });
 
       if (result.status === 'complete') {
@@ -115,7 +180,7 @@ export class BuboAgent {
     console.log('⚠️ Max iterations reached');
     return {
       status: 'max-iterations',
-      message: `Reached maximum of ${this.config.maxIterations} iterations`,
+      message: `Reached maximum of ${this.maxIterations} iterations`,
       iterations: iteration,
       commits,
     };
@@ -127,8 +192,7 @@ export class BuboAgent {
   private async logProgress(
     task: TaskContext,
     iteration: number,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    result: any
+    result: { status: string; message?: string }
   ): Promise<void> {
     const entry = {
       timestamp: new Date().toISOString(),
@@ -139,8 +203,19 @@ export class BuboAgent {
     };
 
     console.log('📝 Progress:', JSON.stringify(entry, null, 2));
-    // TODO: Append to progress.txt
-    // TODO: Post comment to GitHub issue
+
+    // Post progress to GitHub issue
+    if (task.type === 'issue' && task.number) {
+      const comment = `🦉 **Bubo Progress Update**\n\n` +
+        `- Iteration: ${iteration}/${this.maxIterations}\n` +
+        `- Status: ${result.status}\n` +
+        `- Message: ${result.message ?? 'Working on task...'}`;
+
+      try {
+        await this.github.postComment(task.number, comment);
+      } catch (error) {
+        console.warn('Failed to post progress comment:', error);
+      }
+    }
   }
 }
-

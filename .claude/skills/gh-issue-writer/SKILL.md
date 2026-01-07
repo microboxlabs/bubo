@@ -1,8 +1,3 @@
----
-name: gh-issue-writer
-description: Create and publish GitHub issues with full project board integration. Use when the user wants to create feature requests (feat:) or bug reports (bug:), track work in GitHub Projects, and set up development branches.
----
-
 # GitHub Issue Writer
 
 Create and publish GitHub issues for the bubo project with full project board integration.

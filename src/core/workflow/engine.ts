@@ -168,8 +168,8 @@ export class WorkflowEngine {
     const prefix = this.config.agent?.branch_prefix ?? 'bubo/';
     const sanitized = task.title
       .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-|-$/g, '')
+      .replaceAll(/[^a-z0-9]+/g, '-')
+      .replaceAll(/(?:^-|-$)/g, '')
       .slice(0, 50);
 
     return `${prefix}${task.type}-${task.number ?? 'task'}-${sanitized}`;

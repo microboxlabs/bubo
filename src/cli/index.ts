@@ -29,7 +29,7 @@ program
   .option(
     '-p, --project <number>',
     'GitHub Project number for workflow automation (optional)',
-    parseInt
+    Number.parseInt
   )
   .option('-f, --force', 'Overwrite existing .bubo/workflow.yml configuration')
   .addHelpText(
@@ -49,7 +49,7 @@ Examples:
 program
   .command('run')
   .description('Run the Bubo agent on a task')
-  .option('-i, --issue <number>', 'Issue number to work on', parseInt)
+  .option('-i, --issue <number>', 'Issue number to work on', Number.parseInt)
   .option('--dry-run', 'Plan without executing changes')
   .action(async (options) => {
     console.log('🦉 Bubo Agent Starting...\n');

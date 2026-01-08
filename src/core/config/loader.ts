@@ -1,6 +1,6 @@
-import { readFile } from 'fs/promises';
-import { existsSync } from 'fs';
-import { join } from 'path';
+import { readFile } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
+import { join } from 'node:path';
 import { parse as parseYaml } from 'yaml';
 import { validateConfig, safeValidateConfig, type BuboConfig } from './schema.js';
 import { withDefaults } from './defaults.js';
@@ -56,14 +56,14 @@ function loadFromEnv(): Partial<BuboConfig> {
 
   const projectNumber = process.env['BUBO_PROJECT_NUMBER'];
   if (projectNumber && config.github) {
-    config.github.project = parseInt(projectNumber, 10);
+    config.github.project = Number.parseInt(projectNumber, 10);
   }
 
   const maxIterations = process.env['BUBO_MAX_ITERATIONS'];
   if (maxIterations) {
     config.agent = {
       ...config.agent,
-      max_iterations: parseInt(maxIterations, 10),
+      max_iterations: Number.parseInt(maxIterations, 10),
     };
   }
 

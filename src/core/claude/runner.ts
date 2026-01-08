@@ -131,11 +131,12 @@ Otherwise, continue working on the task.
       };
     }
 
-    const blockedMatch = output.match(/<promise>BLOCKED:\s*(.+?)<\/promise>/);
-    if (blockedMatch) {
+    // Use indexOf-based parsing instead of regex to avoid backtracking DoS (CWE-1333)
+    const blockedReason = this.extractBlockedReason(output);
+    if (blockedReason !== null) {
       return {
         status: 'blocked',
-        message: blockedMatch[1] ?? 'Unknown blocker',
+        message: blockedReason || 'Unknown blocker',
         committed: false,
       };
     }
@@ -145,6 +146,28 @@ Otherwise, continue working on the task.
       message: 'Continuing work on task',
       committed: true,
     };
+  }
+
+  /**
+   * Extract blocked reason using linear-time string parsing.
+   * Avoids regex backtracking vulnerability with overlapping patterns.
+   */
+  private extractBlockedReason(output: string): string | null {
+    const startTag = '<promise>BLOCKED:';
+    const endTag = '</promise>';
+
+    const startIdx = output.indexOf(startTag);
+    if (startIdx === -1) {
+      return null;
+    }
+
+    const contentStart = startIdx + startTag.length;
+    const endIdx = output.indexOf(endTag, contentStart);
+    if (endIdx === -1) {
+      return null;
+    }
+
+    return output.slice(contentStart, endIdx).trim();
   }
 }
 

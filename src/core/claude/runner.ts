@@ -3,8 +3,9 @@ import type { TaskContext } from '../../types/agent.js';
 
 /**
  * Get the Claude CLI executable path from environment or use default.
- * Set CLAUDE_PATH environment variable to override.
- * This prevents PATH manipulation attacks (CWE-426, CWE-427).
+ * Set CLAUDE_PATH environment variable to an absolute path to mitigate
+ * PATH manipulation attacks (CWE-426, CWE-427).
+ * Note: When CLAUDE_PATH is not set, the fallback 'claude' relies on PATH resolution.
  */
 function getClaudePath(): string {
   return process.env['CLAUDE_PATH'] ?? 'claude';

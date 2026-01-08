@@ -25,7 +25,7 @@ interface ResolvedValue {
 /**
  * Get the git executable path from environment or use default.
  * Set GIT_PATH environment variable to override (e.g., for Windows or custom installations).
- * This prevents PATH manipulation attacks (CWE-426, CWE-427).
+ * Note: When GIT_PATH is not set, the fallback 'git' still relies on PATH resolution.
  */
 function getGitPath(): string {
   return process.env['GIT_PATH'] ?? 'git';

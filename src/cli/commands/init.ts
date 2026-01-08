@@ -1,6 +1,6 @@
 import { writeFile, mkdir } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
-import { execSync } from 'node:child_process';
+import { execFileSync } from 'node:child_process';
 import { join, dirname } from 'node:path';
 import { stringify as yamlStringify } from 'yaml';
 import { generateStarterConfig } from '../../core/config/defaults.js';
@@ -105,7 +105,7 @@ function printSuccessMessage(
 function detectGitHubRemote(): { owner: string; repo: string } | null {
   try {
     const gitPath = getGitPath();
-    const remote = execSync(`${gitPath} remote get-url origin`, {
+    const remote = execFileSync(gitPath, ['remote', 'get-url', 'origin'], {
       encoding: 'utf-8',
       stdio: ['ignore', 'pipe', 'ignore'], // Suppress stderr to avoid error messages
     }).trim();

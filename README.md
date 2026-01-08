@@ -1,5 +1,8 @@
 # Bubo
 
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=microboxlabs_bubo&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=microboxlabs_bubo)
+
+
 A production-ready AI coding agent with deep GitHub integration. Bubo automates software development workflows by orchestrating AI-powered coding sessions that integrate seamlessly with GitHub Issues, Projects, and Pull Requests.
 
 ## Overview

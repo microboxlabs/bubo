@@ -21,10 +21,18 @@ program
 program
   .command('init')
   .description('Initialize Bubo configuration in the current repository')
-  .option('-o, --owner <owner>', 'GitHub owner/organization')
-  .option('-r, --repo <repo>', 'GitHub repository name')
-  .option('-p, --project <number>', 'GitHub Project number', parseInt)
-  .option('-f, --force', 'Overwrite existing configuration')
+  .option('-o, --owner <owner>', 'GitHub organization or username (env: GITHUB_OWNER)')
+  .option('-r, --repo <repo>', 'Repository name where issues are created, without owner prefix (env: GITHUB_REPO)')
+  .option('-p, --project <number>', 'GitHub Project number for workflow automation (optional)', parseInt)
+  .option('-f, --force', 'Overwrite existing .bubo/workflow.yml configuration')
+  .addHelpText('after', `
+Examples:
+  $ bubo init --owner acme-inc --repo acme-app
+  $ bubo init --project 123                        # Uses env vars for owner/repo
+  $ bubo init --force                              # Regenerate configuration
+  $ bubo init                                      # Auto-detect from git remote
+  $ bubo init --owner acme-inc --repo acme-app --project 123 --force
+`)
   .action(initCommand);
 
 // Run command

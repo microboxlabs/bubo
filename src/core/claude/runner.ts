@@ -2,6 +2,16 @@ import { spawn } from 'child_process';
 import type { TaskContext } from '../../types/agent.js';
 
 /**
+ * Get the Claude CLI executable path from environment or use default.
+ * Set CLAUDE_PATH environment variable to an absolute path to mitigate
+ * PATH manipulation attacks (CWE-426, CWE-427).
+ * Note: When CLAUDE_PATH is not set, the fallback 'claude' relies on PATH resolution.
+ */
+function getClaudePath(): string {
+  return process.env['CLAUDE_PATH'] ?? 'claude';
+}
+
+/**
  * ClaudeCodeRunner - Executes Claude Code for AI-powered coding
  */
 export class ClaudeCodeRunner {
@@ -78,7 +88,8 @@ Otherwise, continue working on the task.
    */
   private async runClaudeCode(prompt: string): Promise<string> {
     return new Promise((resolve, reject) => {
-      const child = spawn('claude', ['--print', prompt], {
+      const claudePath = getClaudePath();
+      const child = spawn(claudePath, ['--print', prompt], {
         stdio: ['pipe', 'pipe', 'pipe'],
         env: { ...process.env },
       });

@@ -111,7 +111,7 @@ export function parseGitHubRemoteUrl(remote: string): { owner: string; repo: str
   // - [:/] separator (colon for SSH, slash for HTTPS)
   // - ([^/]+) captures owner (non-slash characters)
   // - ([^/]+?) captures repo (non-slash, non-greedy to handle .git suffix)
-  const match = remote.match(/github\.com(?::\d+)?[:/]([^/]+)\/([^/]+?)(?:\.git)?$/);
+  const match = /github\.com(?::\d+)?[:/]([^/]+)\/([^/]+?)(?:\.git)?$/.exec(remote);
   if (match?.[1] && match?.[2]) {
     return { owner: match[1], repo: match[2] };
   }

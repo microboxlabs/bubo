@@ -6,24 +6,26 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# Install build dependencies
-RUN apk add --no-cache git
+# Install build dependencies and enable corepack for pnpm
+RUN apk add --no-cache git && \
+    corepack enable && \
+    corepack prepare pnpm@latest --activate
 
 # Copy package files
-COPY package*.json ./
+COPY package.json pnpm-lock.yaml ./
 
 # Install dependencies
-RUN npm ci
+RUN pnpm install --frozen-lockfile
 
 # Copy source code
 COPY tsconfig.json ./
 COPY src/ ./src/
 
 # Build TypeScript
-RUN npm run build
+RUN pnpm build
 
 # Prune dev dependencies
-RUN npm prune --production
+RUN pnpm prune --prod
 
 # Stage 2: Runtime
 FROM node:20-alpine AS runtime

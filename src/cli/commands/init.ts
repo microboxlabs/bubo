@@ -17,6 +17,11 @@ interface InitOptions {
 
 type ConfigSource = 'command line' | 'environment' | 'git remote';
 
+interface ResolvedValue {
+  value: string;
+  source: ConfigSource;
+}
+
 /**
  * Get the git executable path from environment or use default.
  * Set GIT_PATH environment variable to override (e.g., for Windows or custom installations).
@@ -24,6 +29,74 @@ type ConfigSource = 'command line' | 'environment' | 'git remote';
  */
 function getGitPath(): string {
   return process.env['GIT_PATH'] ?? 'git';
+}
+
+/**
+ * Resolve a config value from options, environment, or git remote
+ */
+function resolveConfigValue(
+  optionValue: string | undefined,
+  envKey: string,
+  remoteValue: string | undefined
+): ResolvedValue {
+  if (optionValue) {
+    return { value: optionValue, source: 'command line' };
+  }
+  const envValue = process.env[envKey];
+  if (envValue) {
+    return { value: envValue, source: 'environment' };
+  }
+  if (remoteValue) {
+    return { value: remoteValue, source: 'git remote' };
+  }
+  return { value: '', source: 'command line' };
+}
+
+/**
+ * Print error message when owner/repo is missing
+ */
+function printMissingRepoError(detectedRemote: { owner: string; repo: string } | null): void {
+  console.log('⚠️  GitHub owner and repo are required.\n');
+  console.log('Options:');
+  console.log('  1. Set environment variables:');
+  console.log('     export GITHUB_OWNER=your-org');
+  console.log('     export GITHUB_REPO=your-repo\n');
+  console.log('  2. Pass as arguments:');
+  console.log('     bubo init --owner your-org --repo your-repo\n');
+  if (detectedRemote) {
+    console.log(`  3. Detected from git remote: ${detectedRemote.owner}/${detectedRemote.repo}`);
+    console.log('     This will be used automatically if no other values are provided.\n');
+  } else {
+    console.log('  Note: No git remote detected. Make sure you are in a git repository');
+    console.log('        with a GitHub remote configured.\n');
+  }
+}
+
+/**
+ * Print success message after config creation
+ */
+function printSuccessMessage(
+  owner: string,
+  repo: string,
+  ownerSource: ConfigSource,
+  repoSource: ConfigSource,
+  config: BuboConfig
+): void {
+  const sourceInfo = ownerSource === repoSource
+    ? `(from ${ownerSource})`
+    : `(owner from ${ownerSource}, repo from ${repoSource})`;
+
+  console.log('✅ Created .bubo/workflow.yml');
+  console.log(`   Repository: ${owner}/${repo} ${sourceInfo}`);
+  console.log('');
+  console.log('Next steps:');
+  console.log('  1. Review and customize the configuration');
+  console.log('  2. Create the required labels in your GitHub repository:');
+  console.log(`     - ${config.workflow.triggers.pickup.labels.join(', ')}`);
+  console.log(`     - ${config.workflow.labels.in_progress}`);
+  console.log(`     - ${config.workflow.labels.blocked}`);
+  console.log(`     - ${config.workflow.labels.complete}`);
+  console.log('  3. Run `bubo config validate` to verify your setup');
 }
 
 /**
@@ -65,66 +138,20 @@ export async function initCommand(options: InitOptions): Promise<void> {
   const detectedRemote = (options.owner && options.repo) ? null : detectGitHubRemote();
 
   // Determine owner and repo with source tracking
-  let owner: string;
-  let repo: string;
-  let ownerSource: ConfigSource;
-  let repoSource: ConfigSource;
+  const ownerResolved = resolveConfigValue(options.owner, 'GITHUB_OWNER', detectedRemote?.owner);
+  const repoResolved = resolveConfigValue(options.repo, 'GITHUB_REPO', detectedRemote?.repo);
 
-  if (options.owner) {
-    owner = options.owner;
-    ownerSource = 'command line';
-  } else if (process.env['GITHUB_OWNER']) {
-    owner = process.env['GITHUB_OWNER'];
-    ownerSource = 'environment';
-  } else if (detectedRemote) {
-    owner = detectedRemote.owner;
-    ownerSource = 'git remote';
-  } else {
-    owner = '';
-    ownerSource = 'command line';
-  }
-
-  if (options.repo) {
-    repo = options.repo;
-    repoSource = 'command line';
-  } else if (process.env['GITHUB_REPO']) {
-    repo = process.env['GITHUB_REPO'];
-    repoSource = 'environment';
-  } else if (detectedRemote) {
-    repo = detectedRemote.repo;
-    repoSource = 'git remote';
-  } else {
-    repo = '';
-    repoSource = 'command line';
-  }
-
-  if (!owner || !repo) {
-    console.log('⚠️  GitHub owner and repo are required.\n');
-    console.log('Options:');
-    console.log('  1. Set environment variables:');
-    console.log('     export GITHUB_OWNER=your-org');
-    console.log('     export GITHUB_REPO=your-repo\n');
-    console.log('  2. Pass as arguments:');
-    console.log('     bubo init --owner your-org --repo your-repo\n');
-    if (detectedRemote) {
-      console.log(`  3. Detected from git remote: ${detectedRemote.owner}/${detectedRemote.repo}`);
-      console.log('     This will be used automatically if no other values are provided.\n');
-    } else {
-      console.log('  Note: No git remote detected. Make sure you are in a git repository');
-      console.log('        with a GitHub remote configured.\n');
-    }
+  if (!ownerResolved.value || !repoResolved.value) {
+    printMissingRepoError(detectedRemote);
     return;
   }
 
   // Generate configuration
-  const configOptions: { owner: string; repo: string; project?: number } = {
-    owner,
-    repo,
-  };
-  if (options.project !== undefined) {
-    configOptions.project = options.project;
-  }
-  const config = generateStarterConfig(configOptions);
+  const config = generateStarterConfig({
+    owner: ownerResolved.value,
+    repo: repoResolved.value,
+    ...(options.project !== undefined && { project: options.project }),
+  });
 
   // Create directory if needed
   const configDir = dirname(configPath);
@@ -137,21 +164,7 @@ export async function initCommand(options: InitOptions): Promise<void> {
   await writeFile(configPath, yamlContent, 'utf-8');
 
   // Show success with source information
-  const sourceInfo = ownerSource === repoSource
-    ? `(from ${ownerSource})`
-    : `(owner from ${ownerSource}, repo from ${repoSource})`;
-
-  console.log('✅ Created .bubo/workflow.yml');
-  console.log(`   Repository: ${owner}/${repo} ${sourceInfo}`);
-  console.log('');
-  console.log('Next steps:');
-  console.log('  1. Review and customize the configuration');
-  console.log('  2. Create the required labels in your GitHub repository:');
-  console.log(`     - ${config.workflow.triggers.pickup.labels.join(', ')}`);
-  console.log(`     - ${config.workflow.labels.in_progress}`);
-  console.log(`     - ${config.workflow.labels.blocked}`);
-  console.log(`     - ${config.workflow.labels.complete}`);
-  console.log('  3. Run `bubo config validate` to verify your setup');
+  printSuccessMessage(ownerResolved.value, repoResolved.value, ownerResolved.source, repoResolved.source, config);
 }
 
 /**

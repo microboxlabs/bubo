@@ -1,7 +1,7 @@
 {
   "name": "bubo",
   "version": "0.1.0",
-  "description": "Enterprise AI coding agent with deep GitHub integration",
+  "description": "Production-ready AI coding agent with deep GitHub integration",
   "type": "module",
   "main": "dist/cli/index.js",
   "bin": {
@@ -19,6 +19,8 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "typecheck": "tsc --noEmit",
+    "knip": "knip",
+    "knip:fix": "knip --fix",
     "clean": "rm -rf dist",
     "prepublishOnly": "pnpm build"
   },
@@ -50,12 +52,14 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.2",
     "@types/node": "^22.10.2",
     "@typescript-eslint/eslint-plugin": "^8.18.1",
     "@typescript-eslint/parser": "^8.18.1",
     "@vitest/coverage-v8": "^2.1.8",
     "eslint": "^9.17.0",
     "eslint-config-prettier": "^9.1.0",
+    "knip": "^5.80.0",
     "prettier": "^3.4.2",
     "typescript": "^5.7.2",
     "vitest": "^2.1.8"

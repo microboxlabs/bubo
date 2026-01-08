@@ -1,7 +1,7 @@
-import { writeFile, mkdir } from 'fs/promises';
-import { existsSync } from 'fs';
-import { execSync } from 'child_process';
-import { join, dirname } from 'path';
+import { writeFile, mkdir } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
+import { execSync } from 'node:child_process';
+import { join, dirname } from 'node:path';
 import { stringify as yamlStringify } from 'yaml';
 import { generateStarterConfig } from '../../core/config/defaults.js';
 import type { BuboConfig } from '../../core/config/schema.js';

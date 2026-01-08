@@ -100,20 +100,35 @@ function printSuccessMessage(
 }
 
 /**
+ * Parse a GitHub remote URL into owner and repo components.
+ * Supports SSH (git@github.com:owner/repo.git), HTTPS (https://github.com/owner/repo.git),
+ * and HTTPS with port (https://github.com:443/owner/repo.git).
+ */
+export function parseGitHubRemoteUrl(remote: string): { owner: string; repo: string } | null {
+  // Match: git@github.com:owner/repo.git, https://github.com/owner/repo.git,
+  // or https://github.com:443/owner/repo.git
+  // - (?::\d+)? allows optional port after github.com
+  // - [:/] separator (colon for SSH, slash for HTTPS)
+  // - ([^/]+) captures owner (non-slash characters)
+  // - ([^/]+?) captures repo (non-slash, non-greedy to handle .git suffix)
+  const match = remote.match(/github\.com(?::\d+)?[:/]([^/]+)\/([^/]+?)(?:\.git)?$/);
+  if (match?.[1] && match?.[2]) {
+    return { owner: match[1], repo: match[2] };
+  }
+  return null;
+}
+
+/**
  * Detect GitHub owner and repo from git remote origin URL
  */
-function detectGitHubRemote(): { owner: string; repo: string } | null {
+export function detectGitHubRemote(): { owner: string; repo: string } | null {
   try {
     const gitPath = getGitPath();
     const remote = execFileSync(gitPath, ['remote', 'get-url', 'origin'], {
       encoding: 'utf-8',
       stdio: ['ignore', 'pipe', 'ignore'], // Suppress stderr to avoid error messages
     }).trim();
-    // Parse: git@github.com:owner/repo.git or https://github.com/owner/repo.git
-    const match = remote.match(/github\.com[:/]([^/]+)\/(.+?)(?:\.git)?$/);
-    if (match?.[1] && match?.[2]) {
-      return { owner: match[1], repo: match[2] };
-    }
+    return parseGitHubRemoteUrl(remote);
   } catch {
     // Not a git repo or no remote configured
   }

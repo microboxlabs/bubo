@@ -18,11 +18,21 @@ interface InitOptions {
 type ConfigSource = 'command line' | 'environment' | 'git remote';
 
 /**
+ * Get the git executable path from environment or use default.
+ * Set GIT_PATH environment variable to override (e.g., for Windows or custom installations).
+ * This prevents PATH manipulation attacks (CWE-426, CWE-427).
+ */
+function getGitPath(): string {
+  return process.env['GIT_PATH'] ?? 'git';
+}
+
+/**
  * Detect GitHub owner and repo from git remote origin URL
  */
 function detectGitHubRemote(): { owner: string; repo: string } | null {
   try {
-    const remote = execSync('git remote get-url origin', {
+    const gitPath = getGitPath();
+    const remote = execSync(`${gitPath} remote get-url origin`, {
       encoding: 'utf-8',
       stdio: ['ignore', 'pipe', 'ignore'], // Suppress stderr to avoid error messages
     }).trim();

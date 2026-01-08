@@ -20,8 +20,8 @@ Use this skill when the user wants to:
 ### Step 1: Parse User Input
 
 1. Determine issue type from prefix:
-  - `feat:` → Feature request
-  - `bug:` → Bug report
+- `feat:` → Feature request
+- `bug:` → Bug report
 2. Extract the brief description and additional context
 
 ### Step 2: Create the Issue

@@ -14,7 +14,7 @@ const program = new Command();
 
 program
   .name('bubo')
-  .description('Enterprise AI coding agent with deep GitHub integration')
+  .description('Production-ready AI coding agent with deep GitHub integration')
   .version('0.1.0');
 
 // Init command

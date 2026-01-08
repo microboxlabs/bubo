@@ -55,7 +55,9 @@ function resolveConfigValue(
 /**
  * Print error message when owner/repo is missing
  */
-function printMissingRepoError(detectedRemote: { owner: string; repo: string } | null): void {
+function printMissingRepoError(
+  detectedRemote: { owner: string; repo: string } | null
+): void {
   console.log('⚠️  GitHub owner and repo are required.\n');
   console.log('Options:');
   console.log('  1. Set environment variables:');
@@ -64,8 +66,12 @@ function printMissingRepoError(detectedRemote: { owner: string; repo: string } |
   console.log('  2. Pass as arguments:');
   console.log('     bubo init --owner your-org --repo your-repo\n');
   if (detectedRemote) {
-    console.log(`  3. Detected from git remote: ${detectedRemote.owner}/${detectedRemote.repo}`);
-    console.log('     This will be used automatically if no other values are provided.\n');
+    console.log(
+      `  3. Detected from git remote: ${detectedRemote.owner}/${detectedRemote.repo}`
+    );
+    console.log(
+      '     This will be used automatically if no other values are provided.\n'
+    );
   } else {
     console.log('  Note: No git remote detected. Make sure you are in a git repository');
     console.log('        with a GitHub remote configured.\n');
@@ -82,9 +88,10 @@ function printSuccessMessage(
   repoSource: ConfigSource,
   config: BuboConfig
 ): void {
-  const sourceInfo = ownerSource === repoSource
-    ? `(from ${ownerSource})`
-    : `(owner from ${ownerSource}, repo from ${repoSource})`;
+  const sourceInfo =
+    ownerSource === repoSource
+      ? `(from ${ownerSource})`
+      : `(owner from ${ownerSource}, repo from ${repoSource})`;
 
   console.log('✅ Created .bubo/workflow.yml');
   console.log(`   Repository: ${owner}/${repo} ${sourceInfo}`);
@@ -104,7 +111,9 @@ function printSuccessMessage(
  * Supports SSH (git@github.com:owner/repo.git), HTTPS (https://github.com/owner/repo.git),
  * and HTTPS with port (https://github.com:443/owner/repo.git).
  */
-export function parseGitHubRemoteUrl(remote: string): { owner: string; repo: string } | null {
+export function parseGitHubRemoteUrl(
+  remote: string
+): { owner: string; repo: string } | null {
   // Match: git@github.com:owner/repo.git, https://github.com/owner/repo.git,
   // or https://github.com:443/owner/repo.git
   // - (?::\d+)? allows optional port after github.com
@@ -150,11 +159,19 @@ export async function initCommand(options: InitOptions): Promise<void> {
   }
 
   // Only try to detect from git remote if owner/repo are not provided
-  const detectedRemote = (options.owner && options.repo) ? null : detectGitHubRemote();
+  const detectedRemote = options.owner && options.repo ? null : detectGitHubRemote();
 
   // Determine owner and repo with source tracking
-  const ownerResolved = resolveConfigValue(options.owner, 'GITHUB_OWNER', detectedRemote?.owner);
-  const repoResolved = resolveConfigValue(options.repo, 'GITHUB_REPO', detectedRemote?.repo);
+  const ownerResolved = resolveConfigValue(
+    options.owner,
+    'GITHUB_OWNER',
+    detectedRemote?.owner
+  );
+  const repoResolved = resolveConfigValue(
+    options.repo,
+    'GITHUB_REPO',
+    detectedRemote?.repo
+  );
 
   if (!ownerResolved.value || !repoResolved.value) {
     printMissingRepoError(detectedRemote);
@@ -179,7 +196,13 @@ export async function initCommand(options: InitOptions): Promise<void> {
   await writeFile(configPath, yamlContent, 'utf-8');
 
   // Show success with source information
-  printSuccessMessage(ownerResolved.value, repoResolved.value, ownerResolved.source, repoResolved.source, config);
+  printSuccessMessage(
+    ownerResolved.value,
+    repoResolved.value,
+    ownerResolved.source,
+    repoResolved.source,
+    config
+  );
 }
 
 /**

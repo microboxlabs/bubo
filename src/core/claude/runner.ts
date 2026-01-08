@@ -38,7 +38,7 @@ export class ClaudeCodeRunner {
     }
 
     const prompt = this.buildPrompt(task, iteration);
-    
+
     try {
       const output = await this.runClaudeCode(prompt);
       return this.parseOutput(output);
@@ -153,4 +153,3 @@ interface ExecutionResult {
   message: string;
   committed: boolean;
 }
-

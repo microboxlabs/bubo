@@ -49,4 +49,3 @@ export interface ProgressEntry {
   message: string;
   commitSha?: string;
 }
-

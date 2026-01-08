@@ -16,4 +16,3 @@ export interface PlanOptions {
 export interface StatusOptions {
   verbose?: boolean;
 }
-

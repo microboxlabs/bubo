@@ -124,10 +124,9 @@ export async function loadConfig(repoRoot: string): Promise<BuboConfig> {
       const rawConfig = await loadYamlFile(configFile);
       fileConfig = rawConfig as Partial<BuboConfig>;
     } catch (error) {
-      throw new ConfigError(
-        `Failed to parse configuration file: ${configFile}`,
-        [error instanceof Error ? error.message : String(error)]
-      );
+      throw new ConfigError(`Failed to parse configuration file: ${configFile}`, [
+        error instanceof Error ? error.message : String(error),
+      ]);
     }
   }
 
@@ -137,9 +136,7 @@ export async function loadConfig(repoRoot: string): Promise<BuboConfig> {
   const result = safeValidateConfig(configWithDefaults);
 
   if (!result.success) {
-    const errors = result.errors.errors.map(
-      (e) => `${e.path.join('.')}: ${e.message}`
-    );
+    const errors = result.errors.errors.map((e) => `${e.path.join('.')}: ${e.message}`);
     throw new ConfigError('Invalid configuration', errors);
   }
 

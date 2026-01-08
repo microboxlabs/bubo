@@ -84,7 +84,6 @@ export async function validateCommand(options: ValidateOptions): Promise<void> {
     } else {
       console.log('\n✅ All required labels exist');
     }
-
   } catch (error) {
     console.log('❌ Failed to connect to GitHub:', error);
     process.exitCode = 1;
@@ -114,7 +113,6 @@ export async function showCommand(): Promise<void> {
     console.log(`  Branch Prefix: ${config.agent?.branch_prefix ?? 'bubo/'}`);
     console.log(`  Commit Prefix: ${config.agent?.commit_prefix ?? '[bubo]'}`);
     console.log(`  Dry Run: ${config.agent?.dry_run ?? false}`);
-
   } catch (error) {
     if (error instanceof ConfigError) {
       console.log('❌ Configuration error:', error.message);
@@ -178,7 +176,6 @@ export async function setupLabelsCommand(): Promise<void> {
     }
 
     console.log('\n✅ Labels setup complete');
-
   } catch (error) {
     console.log('❌ Failed to setup labels:', error);
     process.exitCode = 1;

@@ -62,4 +62,3 @@ export class Logger {
 
 // Default logger instance
 export const logger = new Logger();
-

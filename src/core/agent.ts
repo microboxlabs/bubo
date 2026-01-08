@@ -6,7 +6,7 @@ import { WorkflowEngine } from './workflow/engine.js';
 
 /**
  * BuboAgent - The main orchestrator for AI-powered coding sessions
- * 
+ *
  * Implements an iterative agent loop:
  * 1. Fetch task from GitHub (Issue or Project item)
  * 2. Execute coding session with Claude Code
@@ -47,13 +47,15 @@ export class BuboAgent {
    */
   async runOnIssue(issueNumber: number): Promise<AgentResult> {
     console.log(`🦉 Starting agent on issue #${issueNumber}`);
-    
+
     const task = await this.github.getIssue(issueNumber);
 
     // Check if task matches trigger conditions
     if (!this.workflow.matchesTrigger(task)) {
       console.log('⚠️ Issue does not match trigger conditions');
-      console.log(`   Required labels: ${this.config.workflow.triggers.pickup.labels.join(', ')}`);
+      console.log(
+        `   Required labels: ${this.config.workflow.triggers.pickup.labels.join(', ')}`
+      );
       console.log(`   Issue labels: ${task.labels.join(', ')}`);
       return {
         status: 'error',
@@ -72,7 +74,7 @@ export class BuboAgent {
   async runOnNextTask(): Promise<AgentResult> {
     console.log('🦉 Fetching next task from project...');
     console.log(this.workflow.getWorkflowSummary());
-    
+
     const task = await this.workflow.getNextTask();
     if (!task) {
       return {
@@ -95,11 +97,11 @@ export class BuboAgent {
     console.log(`🦉 Finding issues with labels: ${triggerLabels.join(', ')}`);
 
     const issues = await this.github.listIssuesWithLabels(triggerLabels);
-    
+
     // Filter by exclude labels
     const excludeLabels = this.config.workflow.triggers.pickup.exclude_labels ?? [];
-    const eligibleIssues = issues.filter((issue) =>
-      !excludeLabels.some((label) => issue.labels.includes(label))
+    const eligibleIssues = issues.filter(
+      (issue) => !excludeLabels.some((label) => issue.labels.includes(label))
     );
 
     if (eligibleIssues.length === 0) {
@@ -206,7 +208,8 @@ export class BuboAgent {
 
     // Post progress to GitHub issue
     if (task.type === 'issue' && task.number) {
-      const comment = `🦉 **Bubo Progress Update**\n\n` +
+      const comment =
+        `🦉 **Bubo Progress Update**\n\n` +
         `- Iteration: ${iteration}/${this.maxIterations}\n` +
         `- Status: ${result.status}\n` +
         `- Message: ${result.message ?? 'Working on task...'}`;

@@ -22,17 +22,27 @@ program
   .command('init')
   .description('Initialize Bubo configuration in the current repository')
   .option('-o, --owner <owner>', 'GitHub organization or username (env: GITHUB_OWNER)')
-  .option('-r, --repo <repo>', 'Repository name where issues are created, without owner prefix (env: GITHUB_REPO)')
-  .option('-p, --project <number>', 'GitHub Project number for workflow automation (optional)', parseInt)
+  .option(
+    '-r, --repo <repo>',
+    'Repository name where issues are created, without owner prefix (env: GITHUB_REPO)'
+  )
+  .option(
+    '-p, --project <number>',
+    'GitHub Project number for workflow automation (optional)',
+    parseInt
+  )
   .option('-f, --force', 'Overwrite existing .bubo/workflow.yml configuration')
-  .addHelpText('after', `
+  .addHelpText(
+    'after',
+    `
 Examples:
   $ bubo init --owner acme-inc --repo acme-app
   $ bubo init --project 123                        # Uses env vars for owner/repo
   $ bubo init --force                              # Regenerate configuration
   $ bubo init                                      # Auto-detect from git remote
   $ bubo init --owner acme-inc --repo acme-app --project 123 --force
-`)
+`
+  )
   .action(initCommand);
 
 // Run command
@@ -80,9 +90,7 @@ program
   });
 
 // Config commands
-const configCmd = program
-  .command('config')
-  .description('Manage Bubo configuration');
+const configCmd = program.command('config').description('Manage Bubo configuration');
 
 configCmd
   .command('validate')
@@ -125,7 +133,9 @@ program
       if (buboConfig.github.project) {
         console.log(`  Project: #${buboConfig.github.project}`);
       }
-      console.log(`  Trigger labels: ${buboConfig.workflow.triggers.pickup.labels.join(', ')}`);
+      console.log(
+        `  Trigger labels: ${buboConfig.workflow.triggers.pickup.labels.join(', ')}`
+      );
     } catch {
       console.log('Configuration: ✗ Not found or invalid');
       console.log('  Run `bubo init` to create configuration');

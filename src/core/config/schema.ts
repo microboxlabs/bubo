@@ -96,13 +96,15 @@ export function validateConfig(config: unknown): BuboConfig {
 /**
  * Safely validate a configuration object, returning errors instead of throwing
  */
-export function safeValidateConfig(config: unknown): {
-  success: true;
-  data: BuboConfig;
-} | {
-  success: false;
-  errors: z.ZodError;
-} {
+export function safeValidateConfig(config: unknown):
+  | {
+      success: true;
+      data: BuboConfig;
+    }
+  | {
+      success: false;
+      errors: z.ZodError;
+    } {
   const result = buboConfigSchema.safeParse(config);
   if (result.success) {
     return { success: true, data: result.data };

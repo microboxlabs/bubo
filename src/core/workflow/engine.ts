@@ -5,7 +5,7 @@ import { GitHubProjects } from '../github/projects.js';
 
 /**
  * WorkflowEngine - Manages the kanban workflow and task transitions
- * 
+ *
  * Uses configuration to adapt to any GitHub workflow structure.
  */
 export class WorkflowEngine {
@@ -82,7 +82,7 @@ export class WorkflowEngine {
    */
   async getNextTask(projectNumber?: number): Promise<TaskContext | null> {
     const projectNum = projectNumber ?? this.config.github.project;
-    
+
     if (!projectNum) {
       console.log('No project number configured');
       return null;

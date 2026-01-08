@@ -37,7 +37,7 @@ export class GitHubClient {
       number: issue.number,
       title: issue.title,
       body: issue.body ?? '',
-      labels: issue.labels.map((l) => (typeof l === 'string' ? l : l.name ?? '')),
+      labels: issue.labels.map((l) => (typeof l === 'string' ? l : (l.name ?? ''))),
       url: issue.html_url,
     };
   }
@@ -63,7 +63,7 @@ export class GitHubClient {
         number: issue.number,
         title: issue.title,
         body: issue.body ?? '',
-        labels: issue.labels.map((l) => (typeof l === 'string' ? l : l.name ?? '')),
+        labels: issue.labels.map((l) => (typeof l === 'string' ? l : (l.name ?? ''))),
         url: issue.html_url,
       }));
   }
